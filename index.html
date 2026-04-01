@@ -507,7 +507,7 @@ async function fetchCSV(){
       if(!nom||nom==='Nom'||nom==='')return;
       const key=NAME_MAP[nom];
       if(!key)return;
-      const price=parsePrice(cols[3]);
+      const price=parsePrice(cols[4]);
       if(price==null||price<=0)return;
       prices[key]={price};
       parsed++;
