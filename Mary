@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mary Dashboard</title>
+
+<style>
+body{font-family:Arial;background:#0b0f14;color:#fff;margin:0}
+.tabs{display:flex;background:#111}
+.tab{padding:15px 25px;cursor:pointer}
+.tab.active{background:#1a2230}
+.panel{display:none;padding:20px}
+.panel.active{display:block}
+
+.card{
+background:#141b26;
+padding:20px;
+margin:10px 0;
+border-radius:8px
+}
+
+.price{font-size:28px;font-weight:bold}
+</style>
+</head>
+
+<body>
+
+<div class="tabs">
+<div class="tab active" onclick="show('mary')">Mary</div>
+<div class="tab" onclick="show('plafonds')">Plafonds</div>
+</div>
+
+<div id="mary" class="panel active">
+<h2>Mary - Métaux</h2>
+
+<div class="card">
+Silver<br>
+<div id="silver" class="price">--</div>
+</div>
+
+<div class="card">
+Or<br>
+<div id="gold" class="price">--</div>
+</div>
+
+</div>
+
+<div id="plafonds" class="panel">
+<h2>Plafonds Mary</h2>
+
+<div class="card">
+Silver plafond : 70€
+</div>
+
+<div class="card">
+Or plafond : 180€
+</div>
+
+</div>
+
+<script>
+
+const CSV_URL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQUKwYqVKqTvNkXki_6mnUgt_zcLi6xG-0vqRUGlx_FiGJuH9seToVrU9SQouAjpO53mBRUtzXn9spK/pub?gid=0&single=true&output=csv";
+
+function show(id){
+document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'))
+document.querySelectorAll('.tab').forEach(p=>p.classList.remove('active'))
+
+document.getElementById(id).classList.add('active')
+event.target.classList.add('active')
+}
+
+function parsePrice(str){
+if(!str) return null
+let s=str.replace(/\s/g,'').replace(',','.')
+return parseFloat(s)
+}
+
+async function load(){
+
+const r=await fetch(CSV_URL)
+const t=await r.text()
+
+const rows=t.split('\n')
+
+rows.forEach(r=>{
+const c=r.split(',')
+
+const k=c[0]?.trim().toLowerCase()
+const v=parsePrice(c[1])
+
+if(k==="silver") document.getElementById('silver').textContent=v+" €"
+if(k==="gold") document.getElementById('gold').textContent=v+" €"
+
+})
+
+}
+
+load()
+setInterval(load,300000)
+
+</script>
+
+</body>
+</html>
