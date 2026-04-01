@@ -447,22 +447,16 @@ updateClock();setInterval(updateClock,30000);
 // PARSE CSV — gère virgule décimale française (1,157) et point (1.157)
 // Votre Google Sheets utilise la virgule comme séparateur décimal
 // ══════════════════════════════════════
-function parseCSV(text){
-  // Détecte le séparateur de colonnes (virgule ou point-virgule)
-  const firstLine=text.split('\n')[0];
-  const sep=firstLine.split(';').length>firstLine.split(',').length?';':',';
-  return text.trim().split('\n').map(line=>{
-    const cols=[];let cur='',inQ=false;
-    for(const c of line){
-      if(c==='"')inQ=!inQ;
-      else if(c===sep&&!inQ){cols.push(cur.trim().replace(/^"|"$/g,''));cur='';}
-      else cur+=c;
-    }
-    cols.push(cur.trim().replace(/^"|"$/g,''));
-    return cols;
-  });
+function parseCSV(text) {
+  return text
+    .trim()
+    .split('\n')
+    .map(line => {
+      // split UNIQUEMENT sur les ; (Google CSV FR)
+      return line.split(';').map(c => c.trim());
+    });
 }
-
+  
 function parsePrice(str) {
   if (!str || str.includes('NA') || str.includes('')) return null;
   let s = str.replace(/ /g, '').replace(/€/g, '').replace(/\$/g, '');
