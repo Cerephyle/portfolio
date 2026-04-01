@@ -464,23 +464,24 @@ function parseCSV(text){
 }
 
 function parsePrice(str) {
-  if (!str || typeof str !== 'string') return null;
+  if (!str) return null;
 
   let s = str
     .replace(/\s/g, '')
-    .replace(/[€$]/g, '');
+    .replace(/€/g, '')
+    .replace(/\$/g, '');
 
-  // 1.234,56  → 1234.56
-  if (s.includes('.') && s.includes(',')) {
-    s = s.replace(/\./g, '').replace(',', '.');
-  }
-  // 58,87 → 58.87
-  else if (s.includes(',')) {
+  // format FR 58,87 -> 58.87
+  if (s.includes(',') && !s.includes('.')) {
     s = s.replace(',', '.');
+  } else {
+    s = s.replace(/,/g, '');
   }
 
   const v = parseFloat(s);
-  return isNaN(v) ? null : v;
+  if (isNaN(v)) return null;
+
+  return v;
 }
   
 // ══════════════════════════════════════
@@ -551,7 +552,7 @@ const TD=[
 function renderTicker() {
   document.getElementById('ticker-scroll').innerHTML = TD.map(t => {
     const p = prices[t.key];
-    if (!p || !p.price) return '';
+    if (!p) return '';
 
     const pStr = p.price.toLocaleString('fr-FR', {
       minimumFractionDigits: t.dec,
@@ -683,4 +684,4 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 </body>
-</html>"
+</html>".
