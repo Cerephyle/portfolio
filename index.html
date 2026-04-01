@@ -551,12 +551,9 @@ const TD=[
 function renderTicker() {
   document.getElementById('ticker-scroll').innerHTML = TD.map(t => {
     const p = prices[t.key];
-    if (!p || !p.price) return `<div class="ticker-item">
-<span class="ticker-name">${t.label}</span>
-<span class="ticker-price">—</span>
-</div>`;
+    if (!p || !p.price) return '';
 
- const pStr = Number(p.price).toLocaleString('fr-FR', {
+    const pStr = p.price.toLocaleString('fr-FR', {
       minimumFractionDigits: t.dec,
       maximumFractionDigits: t.dec
     });
@@ -686,4 +683,4 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 </body>
-</html>
+</html>"
