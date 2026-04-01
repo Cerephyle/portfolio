@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio V3</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;background:#0b0f14;color:#e6edf3;margin:0;padding:20px}
+.card{background:#111826;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 10px 25px rgba(0,0,0,.25)}
+.row{display:flex;justify-content:space-between;margin:6px 0}
+.small{opacity:.7;font-size:12px}
+.error{color:#ff6b6b}
+.ok{color:#4cd964}
+</style>
+</head>
+<body>
+
+<h2>Portfolio</h2>
+<div id="status" class="small">Chargement...</div>
+<div id="portfolio"></div>
+
+<script>
+/***********************
+ CONFIG
+************************/
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQUKwYqVKqTvNkXki_6mnUgt_zcLi6xG-0vqRUGlx_FiGJuH9seToVrU9SQouAjpO53mBRUtzXn9spK/pub?gid=0&single=true&output=csv";
+
+/***********************
+ MAPPING NOMS
+************************/
+const NAME_MAP = {
+  'silver etc':'silver',
+  'gold etc':'gold',
+  'eur/usd':'eurusd',
+  'amundi msci world cw8':'cw8',
+  'etf msci world (pea)':'msciw',
+  'bnp paribas':'bnp',
+  'airbus':'air',
+  'vinci':'dg',
+  'totalenergies':'tte',
+  'lvmh':'mc',
+  'sanofi':'san',
+  'fdj united':'fdju',
+  'edenred':'eden',
+  'arkema':'ark',
+  'veolia':'vie',
+  'sopra steria':'sop',
+  'publicis groupe':'pub'
+};
+
+/***********************
+ NORMALIZE
+************************/
+function normalize(str){
+  return str
+    .toLowerCase()
+    .replace(/\s+/g,' ')
+    .replace(/\u00A0/g,' ')
+    .trim();
+}
+
+/***********************
+ PARSE CSV
+************************/
+function parseCSV(text){
+  const lines = text.split(/\r?\n/).filter(Boolean);
+
+  if(lines.length<=1) throw new Error('CSV vide');
+
+  const data = {};
+  let parsed = 0;
+  const unknown = [];
+
+  for(const line of lines.slice(1)){
+
+    const cols = line.split(/[;,]/);
+    if(cols.length < 2) continue;
+
+    const rawName = cols[0];
+    const name = normalize(rawName);
+
+    const key = NAME_MAP[name];
+
+    if(!key){
+      unknown.push(rawName);
+      continue;
+    }
+
+    const prix = parseFloat(cols[1]?.replace(',','.')) || 0;
+    const perf = parseFloat(cols[2]?.replace(',','.')) || 0;
+    const poids = parseFloat(cols[3]?.replace(',','.')) || 0;
+
+    data[key] = { prix, perf, poids, rawName };
+    parsed++;
+  }
+
+  if(parsed===0){
+    throw new Error(
+      'Aucun cours reconnu.\n\nNoms trouvés:\n' +
+      unknown.join('\n')
+    );
+  }
+
+  return data;
+}
+
+/***********************
+ UI
+************************/
+function render(data){
+  const el = document.getElementById('portfolio');
+  el.innerHTML = '';
+
+  Object.entries(data).forEach(([k,v])=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+
+    div.innerHTML = `
+      <div class="row">
+        <b>${v.rawName}</b>
+        <span>${k}</span>
+      </div>
+
+      <div class="row">
+        <span>Prix</span>
+        <span>${v.prix}</span>
+      </div>
+
+      <div class="row">
+        <span>Perf</span>
+        <span class="${v.perf>=0?'ok':'error'}">${v.perf}%</span>
+      </div>
+
+      <div class="row">
+        <span>Poids</span>
+        <span>${v.poids}%</span>
+      </div>
+    `;
+
+    el.appendChild(div);
+  });
+}
+
+/***********************
+ LOAD
+************************/
+async function load(){
+  const status = document.getElementById('status');
+
+  try{
+    status.textContent = 'Chargement Google Sheet...';
+
+    const res = await fetch(CSV_URL);
+    const txt = await res.text();
+
+    const data = parseCSV(txt);
+
+    render(data);
+
+    status.innerHTML = '<span class="ok">✓ Données chargées</span>';
+  }
+  catch(e){
+    status.innerHTML = '<span class="error">'+e.message+'</span>';
+    console.error(e);
+  }
+}
+
+load();
+</script>
+
+</body>
+</html>
