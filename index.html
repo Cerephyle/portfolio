@@ -464,26 +464,22 @@ function parseCSV(text){
 }
 
 function parsePrice(str) {
-  if (!str) return null;
-
-  let s = str
-    .replace(/\s/g, '')
-    .replace(/€/g, '')
-    .replace(/\$/g, '');
-
-  // format FR 58,87 -> 58.87
-  if (s.includes(',') && !s.includes('.')) {
-    s = s.replace(',', '.');
-  } else {
-    s = s.replace(/,/g, '');
-  }
-
+  if (!str || str.includes('NA') || str.includes('')) return null;
+  let s = str.replace(/ /g, '').replace(/€/g, '').replace(/\$/g, '');
+  // Grer virgule française 58,87 → 58.87
+  if (/,[1-4]$/.test(s)) s = s.replace(',', '.');
+  else s = s.replace(/,/g, '');
   const v = parseFloat(s);
-  if (isNaN(v)) return null;
-
+  const key = Object.keys(prices).find(k => prices[k] === v) || ''; // Détection approximative
+  if (isNaN(v) || v === null) return null;
+  
+  // CORRECTION : Diviser par 100000 pour EURUSD et Silver
+  if (key === 'eurusd' || key === 'silver') {
+    return v / 100000;
+  }
   return v;
 }
-  
+
 // ══════════════════════════════════════
 // FETCH CSV — direct depuis GitHub Pages (pas de CORS grâce à la publication Google)
 // ══════════════════════════════════════
@@ -553,18 +549,8 @@ function renderTicker() {
   document.getElementById('ticker-scroll').innerHTML = TD.map(t => {
     const p = prices[t.key];
     if (!p) return '';
-
-    const pStr = p.price.toLocaleString('fr-FR', {
-      minimumFractionDigits: t.dec,
-      maximumFractionDigits: t.dec
-    });
-
-    return `
-      <div class="ticker-item">
-        <span class="ticker-name">${t.label}</span>
-        <span class="ticker-price">${pStr} ${t.cur}</span>
-      </div>
-    `;
+    const pStr = p.toLocaleString('fr-FR', {minimumFractionDigits: t.dec, maximumFractionDigits: t.dec});
+    return `<div class="ticker-item"><span class="ticker-name">${t.label}</span><span class="ticker-price">${pStr} ${t.cur}</span></div>`;
   }).join('');
 }
 
@@ -684,4 +670,4 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 </body>
-</html>".
+</html>
