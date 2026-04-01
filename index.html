@@ -464,22 +464,25 @@ function parseCSV(text){
 }
 
 function parsePrice(str) {
-  if (!str || str.includes('NA') || str.includes('')) return null;
-  let s = str.replace(/ /g, '').replace(/€/g, '').replace(/\$/g, '');
-  // Grer virgule française 58,87 → 58.87
-  if (/,[1-4]$/.test(s)) s = s.replace(',', '.');
-  else s = s.replace(/,/g, '');
-  const v = parseFloat(s);
-  const key = Object.keys(prices).find(k => prices[k] === v) || ''; // Détection approximative
-  if (isNaN(v) || v === null) return null;
-  
-  // CORRECTION : Diviser par 100000 pour EURUSD et Silver
-  if (key === 'eurusd' || key === 'silver') {
-    return v / 100000;
-  }
-  return v;
-}
+  if (!str || typeof str !== 'string') return null;
 
+  let s = str
+    .replace(/\s/g, '')
+    .replace(/[€$]/g, '');
+
+  // 1.234,56  → 1234.56
+  if (s.includes('.') && s.includes(',')) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  }
+  // 58,87 → 58.87
+  else if (s.includes(',')) {
+    s = s.replace(',', '.');
+  }
+
+  const v = parseFloat(s);
+  return isNaN(v) ? null : v;
+}
+  
 // ══════════════════════════════════════
 // FETCH CSV — direct depuis GitHub Pages (pas de CORS grâce à la publication Google)
 // ══════════════════════════════════════
@@ -548,9 +551,22 @@ const TD=[
 function renderTicker() {
   document.getElementById('ticker-scroll').innerHTML = TD.map(t => {
     const p = prices[t.key];
-    if (!p) return '';
-    const pStr = p.toLocaleString('fr-FR', {minimumFractionDigits: t.dec, maximumFractionDigits: t.dec});
-    return `<div class="ticker-item"><span class="ticker-name">${t.label}</span><span class="ticker-price">${pStr} ${t.cur}</span></div>`;
+    if (!p || !p.price) return `<div class="ticker-item">
+<span class="ticker-name">${t.label}</span>
+<span class="ticker-price">—</span>
+</div>`;
+
+ const pStr = Number(p.price).toLocaleString('fr-FR', {
+      minimumFractionDigits: t.dec,
+      maximumFractionDigits: t.dec
+    });
+
+    return `
+      <div class="ticker-item">
+        <span class="ticker-name">${t.label}</span>
+        <span class="ticker-price">${pStr} ${t.cur}</span>
+      </div>
+    `;
   }).join('');
 }
 
