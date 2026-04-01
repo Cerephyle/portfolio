@@ -463,16 +463,21 @@ function parseCSV(text){
   });
 }
 
-function parsePrice(str){
-  if(!str||str.includes('N/A')||str.includes('#')||str==='')return null;
-  // Supprimer espaces et symboles monétaires
-  let s=str.replace(/\s/g,'').replace(/[€$£%]/g,'');
-  // Gérer la notation française : 58,87 → 58.87
-  // Si la virgule est le séparateur décimal (dernier séparateur avec 1-4 chiffres après)
-  if(/^\d+,\d{1,4}$/.test(s)){s=s.replace(',','.');}
-  else{s=s.replace(/,/g,'');} // sinon c'est un séparateur de milliers
-  const v=parseFloat(s);
-  return isNaN(v)?null:v;
+function parsePrice(str) {
+  if (!str || str.includes('NA') || str.includes('')) return null;
+  let s = str.replace(/ /g, '').replace(/€/g, '').replace(/\$/g, '');
+  // Grer virgule française 58,87 → 58.87
+  if (/,[1-4]$/.test(s)) s = s.replace(',', '.');
+  else s = s.replace(/,/g, '');
+  const v = parseFloat(s);
+  const key = Object.keys(prices).find(k => prices[k] === v) || ''; // Détection approximative
+  if (isNaN(v) || v === null) return null;
+  
+  // CORRECTION : Diviser par 100000 pour EURUSD et Silver
+  if (key === 'eurusd' || key === 'silver') {
+    return v / 100000;
+  }
+  return v;
 }
 
 // ══════════════════════════════════════
@@ -530,8 +535,8 @@ async function fetchCSV(){
 
 // TICKER
 const TD=[
-  {key:'eurusd',label:'EUR/USD',dec:4,cur:'$'},
-  {key:'silver',label:'Silver', dec:2,cur:'€'},
+  {key:'eurusd', label:'EUR/USD', dec: 5, cur: '$' },  // CORRECTION : dec=5
+  {key:'silver', label:'Silver', dec: 2, cur: '€' },
   {key:'gold',  label:'Or',     dec:2,cur:'€'},
   {key:'fdju',  label:'FDJ',    dec:2,cur:'€'},
   {key:'san',   label:'Sanofi', dec:2,cur:'€'},
@@ -540,12 +545,12 @@ const TD=[
   {key:'sop',   label:'Sopra',  dec:2,cur:'€'},
   {key:'msciw', label:'MSCI W', dec:2,cur:'€'},
 ];
-function renderTicker(){
-  document.getElementById('ticker-scroll').innerHTML=TD.map(t=>{
-    const p=prices[t.key];
-    if(!p)return`<div class="ticker-item"><span class="ticker-name">${t.label}</span><span class="ticker-price" style="color:var(--muted)">—</span></div>`;
-    const pStr=p.price.toLocaleString('fr-FR',{minimumFractionDigits:t.dec,maximumFractionDigits:t.dec});
-    return`<div class="ticker-item"><span class="ticker-name">${t.label}</span><span class="ticker-price">${pStr} ${t.cur}</span></div>`;
+function renderTicker() {
+  document.getElementById('ticker-scroll').innerHTML = TD.map(t => {
+    const p = prices[t.key];
+    if (!p) return '';
+    const pStr = p.toLocaleString('fr-FR', {minimumFractionDigits: t.dec, maximumFractionDigits: t.dec});
+    return `<div class="ticker-item"><span class="ticker-name">${t.label}</span><span class="ticker-price">${pStr} ${t.cur}</span></div>`;
   }).join('');
 }
 
